@@ -9,8 +9,16 @@ import type { Frame } from './scene';
 const TITLE_FONT = { family: 'Bungee Shade', weight: 400 };
 /** 0 = straight facets between sampled nodes, 1 = soft rolling hills. */
 const ROUNDNESS = 0.15;
-/** Hours that go by while scrolling, from the landscape at rest until the water covers the screen. */
-const SCROLL_HOURS = 12;
+/**
+ * Scrolling always carries the clock forward to midnight, so the water under the content ends
+ * on the same dark, readable tone whatever the visit time. Closer than this to midnight, it goes
+ * round a full extra day so there is still a passage of time to see.
+ */
+const MIN_SCROLL_HOURS = 3;
+const hoursToMidnight = (h: number) => {
+  const d = 24 - h;
+  return d < MIN_SCROLL_HOURS ? d + 24 : d;
+};
 
 // ---------- seeded scenery ----------
 let seed = 11;
@@ -156,17 +164,25 @@ export function initHero(hero: HTMLElement) {
     if (follower) sea = clamp(follower.getBoundingClientRect().top - hero.getBoundingClientRect().top, 0, g.gy);
     return { sea, rise: 1 - sea / g.gy };   // rise: 0 at rest, 1 once the water fills the screen
   }
-  // Scrolling moves the clock forward: the hour on screen is the real (or dragged) hour plus
-  // up to SCROLL_HOURS, eased so it starts and settles gently, then stays put under the water.
-  const scrollOffset = (rise: number) => SCROLL_HOURS * smooth(0, 1, rise);
-  const shownHour = () => (state.hour + scrollOffset(W ? water(geo()).rise : 0)) % 24;
+  // Scrolling moves the clock forward: the hour on screen goes from the real (or dragged) hour
+  // to midnight, eased so it starts and settles gently, then stays put under the water.
+  const hourAt = (base: number, rise: number) => (base + hoursToMidnight(base) * smooth(0, 1, rise)) % 24;
+  const shownHour = () => hourAt(state.hour, W ? water(geo()).rise : 0);
+  // the inverse, for dragging the sun or moon mid-scroll: which real hour puts `target` on screen?
+  function baseFor(target: number, rise: number) {
+    if (rise <= 0) return target;
+    const dist = (h: number) => { const d = Math.abs(hourAt(h, rise) - target) % 24; return Math.min(d, 24 - d); };
+    let best = state.hour;
+    for (let h = 0; h < 24; h += 0.05) if (dist(h) < dist(best)) best = h;
+    return best;
+  }
 
   let shownText = '';
   function draw(t = performance.now()) {
     if (!W) return;
     const g = geo(), { gy } = g;
     const { sea, rise } = water(g);
-    const hour = (state.hour + scrollOffset(rise)) % 24;
+    const hour = hourAt(state.hour, rise);
     const p = skyAt(hour);
     const ink = pickInk(mix(p.top, p.bot, 0.2));
     lastSea = sea;
@@ -376,7 +392,7 @@ export function initHero(hero: HTMLElement) {
     const sunHour = RISE + s * DAY, moonHour = SET + s * NIGHT;
     // the drag sets the hour on screen; take the scroll offset back out to get the underlying hour
     const target = drag === 'sun' ? (up ? sunHour : moonHour) : up ? moonHour : sunHour;
-    setHour(target - scrollOffset(water(g).rise), 'manual');
+    setHour(baseFor(target, water(g).rise), 'manual');
   });
   const end = () => {
     if (!drag) return;
@@ -389,7 +405,7 @@ export function initHero(hero: HTMLElement) {
   });
 
   // keyboard / screen reader: a visually hidden range input; time returns when focus leaves
-  hourInput.addEventListener('input', () => { cancelAnimationFrame(tween); setHour(+hourInput.value - scrollOffset(water(geo()).rise), 'manual'); });
+  hourInput.addEventListener('input', () => { cancelAnimationFrame(tween); setHour(baseFor(+hourInput.value, water(geo()).rise), 'manual'); });
   hourInput.addEventListener('blur', () => { if (state.mode === 'manual') returnToNow(); });
 
   // ---------- start ----------

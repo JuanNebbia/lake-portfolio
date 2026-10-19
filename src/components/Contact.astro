@@ -1,0 +1,138 @@
+---
+// Contact: one row per channel, each with a button to copy it and a link to open it.
+const channels = [
+  { label: 'Email', value: 'juan.nebbia@gmail.com', href: 'mailto:juan.nebbia@gmail.com', open: 'Write an email' },
+  { label: 'LinkedIn', value: 'linkedin.com/in/juan-nebbia', href: 'https://www.linkedin.com/in/juan-nebbia', open: 'Open LinkedIn profile' },
+  { label: 'GitHub', value: 'github.com/JuanNebbia', href: 'https://github.com/JuanNebbia', open: 'Open GitHub profile' },
+];
+---
+
+<section class="contact" aria-labelledby="contact-title">
+  <p class="label">// contact</p>
+  <h2 id="contact-title">Let's talk</h2>
+  <p class="lead">Open to new projects and full-time roles. The fastest way to reach me is by email.</p>
+
+  <ul class="list">
+    {channels.map((c) => (
+      <li class="row">
+        <span class="value">{c.value}</span>
+        <span class="actions">
+          <button type="button" class="icon" data-copy={c.value} aria-label={`Copy ${c.label.toLowerCase()}`}>
+            <svg class="i-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
+            <svg class="i-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          </button>
+          <a class="icon" href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel="noopener" aria-label={c.open}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8" /></svg>
+          </a>
+        </span>
+      </li>
+    ))}
+  </ul>
+  <p class="sr-only" role="status" data-copy-status></p>
+</section>
+
+<script>
+  const status = document.querySelector<HTMLElement>('[data-copy-status]');
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    let timer = 0;
+    btn.addEventListener('click', async () => {
+      const text = btn.dataset.copy!;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        // clipboard blocked: fall back to selecting the value so it can be copied by hand
+        const value = btn.closest('.row')?.querySelector('.value');
+        if (value) getSelection()?.selectAllChildren(value);
+        return;
+      }
+      btn.classList.add('copied');
+      if (status) status.textContent = `Copied ${text}`;
+      clearTimeout(timer);
+      timer = window.setTimeout(() => btn.classList.remove('copied'), 1600);
+    });
+  });
+</script>
+
+<style>
+  .contact {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .label {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft);
+  }
+  h2 {
+    margin: 0 0 12px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.01em;
+  }
+  .lead {
+    margin: 0 0 28px;
+    max-width: 62ch;
+    font-size: 17px;
+    color: var(--water-ink-soft);
+  }
+
+  .list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .value {
+    font-size: 16px;
+    overflow-wrap: anywhere;
+  }
+  .actions {
+    display: flex;
+    gap: 2px;
+  }
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--water-ink-soft);
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .icon:hover { color: var(--water-ink); }
+  .icon:focus-visible { outline: 2px solid var(--water-ink); outline-offset: 1px; }
+  .icon svg {
+    width: 16px;
+    height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .i-done { display: none; }
+  .copied .i-copy { display: none; }
+  .copied .i-done { display: block; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+</style>

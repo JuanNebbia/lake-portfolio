@@ -1,0 +1,262 @@
+---
+// Horizontal timeline: oldest on the left, opening scrolled to the present.
+// Drag it (or scroll / use the arrow keys) to travel back in time; the year in the heading follows.
+import { stages } from '../data/experience';
+
+const firstYear = stages[0]!.start.slice(0, 4);
+const lastStageYear = stages[stages.length - 1]!.start.slice(0, 4);
+---
+
+<section class="experience" aria-labelledby="experience-title">
+  <div class="head">
+    <div>
+      <p class="label">// experience</p>
+      <h2 id="experience-title">The road so far</h2>
+    </div>
+    <p class="now" aria-hidden="true"><span data-tl-year>{lastStageYear}</span></p>
+  </div>
+
+  <!-- the edge fades live on this wrapper, not as a mask on the scroller: a mask would stop the cards' backdrop blur -->
+  <div class="strip">
+    <div class="scroller" data-timeline tabindex="0" aria-label={`Timeline from ${firstYear} to today. Drag or use the arrow keys to move through it.`}>
+      <ol class="track">
+        {stages.map((stage) => (
+          <li class:list={['stage', stage.kind]} data-year={stage.start.slice(0, 4)}>
+            <span class="dot" aria-hidden="true"></span>
+            <p class="dates">{stage.dates}</p>
+            <article class="card">
+              <h3>{stage.role}</h3>
+              <p class="place">{stage.place}</p>
+              {stage.summary && <p class="summary">{stage.summary}</p>}
+              {stage.tags && (
+                <ul class="tags">{stage.tags.map((t) => <li>{t}</li>)}</ul>
+              )}
+            </article>
+          </li>
+        ))}
+        <li class="end" aria-hidden="true"><span>now</span></li>
+      </ol>
+    </div>
+  </div>
+  <p class="hint" aria-hidden="true">← drag to go back in time</p>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-timeline]').forEach((el) => {
+    const yearEl = el.closest('section')?.querySelector<HTMLElement>('[data-tl-year]');
+    const marks = [...el.querySelectorAll<HTMLElement>('[data-year]')];
+
+    // open on the present
+    el.scrollLeft = el.scrollWidth;
+
+    // the year of whatever sits in the middle of the view
+    const updateYear = () => {
+      if (!yearEl) return;
+      const mid = el.getBoundingClientRect().left + el.clientWidth / 2;
+      let year = marks[0]?.dataset.year ?? '';
+      for (const m of marks) if (m.getBoundingClientRect().left <= mid) year = m.dataset.year!;
+      if (yearEl.textContent !== year) yearEl.textContent = year;
+    };
+    el.addEventListener('scroll', updateYear, { passive: true });
+    updateYear();
+
+    // drag to scroll with a mouse; touch and trackpads scroll natively
+    let startX = 0, startLeft = 0, dragging = false, moved = false;
+    el.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return;
+      dragging = true; moved = false;
+      startX = e.clientX; startLeft = el.scrollLeft;
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 3) { moved = true; el.classList.add('dragging'); }
+      el.scrollLeft = startLeft - dx;
+    });
+    const stop = () => { dragging = false; el.classList.remove('dragging'); };
+    el.addEventListener('pointerup', stop);
+    el.addEventListener('pointercancel', stop);
+    // a drag shouldn't count as a click on whatever it ended over
+    el.addEventListener('click', (e) => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+  });
+</script>
+
+<style>
+  .experience {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .label {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft);
+  }
+  h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.01em;
+  }
+  .now {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: clamp(28px, 4vw, 44px);
+    font-variant-numeric: tabular-nums;
+    color: var(--water-ink-soft);
+  }
+  .now::before { content: '// '; font-size: 0.5em; vertical-align: middle; }
+
+  /* full-bleed strip whose first and last cards line up with the page column */
+  .strip {
+    --pad: max(16px, calc((100vw - 1080px) / 2));
+    position: relative;
+    margin-inline: calc(50% - 50vw);
+  }
+  /* edges fade into the water, hinting there is more to either side */
+  .strip::before,
+  .strip::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: min(var(--pad), 120px);
+    z-index: 1;
+    pointer-events: none;
+  }
+  .strip::before { left: 0; background: linear-gradient(to right, var(--water), transparent); }
+  .strip::after { right: 0; background: linear-gradient(to left, var(--water), transparent); }
+  .scroller {
+    padding: 8px var(--pad) 24px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    cursor: grab;
+  }
+  .scroller::-webkit-scrollbar { display: none; }
+  .scroller:global(.dragging) { cursor: grabbing; user-select: none; }
+  .scroller:focus-visible { outline: 2px solid var(--water-ink); outline-offset: -2px; }
+
+  .track {
+    position: relative;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    width: max-content;
+  }
+  /* the rail: a water line running under the dates */
+  .track::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 34px;
+    border-top: 1px solid var(--water-ink-soft);
+  }
+
+  .stage {
+    position: relative;
+    flex: none;
+    width: 300px;
+    padding-top: 52px;
+  }
+  .stage.course { width: 210px; }
+  .dot {
+    position: absolute;
+    top: 29px;
+    left: 0;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: var(--water);
+    border: 1.5px solid var(--water-ink);
+  }
+  .work .dot { background: var(--water-ink); }
+  .dates {
+    position: absolute;
+    top: 4px;
+    left: 0;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--water-ink-soft);
+    white-space: nowrap;
+  }
+
+  .card {
+    border: 1px solid var(--water-line);
+    border-radius: 10px;
+    padding: 16px 18px 18px;
+    background: color-mix(in srgb, var(--water-ink) 4%, transparent);
+    backdrop-filter: blur(2px);
+  }
+  .course .card { background: none; border-style: dashed; }
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 17px;
+    line-height: 1.3;
+  }
+  .course h3 { font-size: 14.5px; }
+  .place {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: var(--water-ink-soft);
+  }
+  .summary {
+    margin: 10px 0 0;
+    font-size: 14.5px;
+  }
+  .tags {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .tags li {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border: 1px solid var(--water-line);
+    border-radius: 999px;
+  }
+
+  .end {
+    position: relative;
+    flex: none;
+    width: 40px;
+  }
+  .end span {
+    position: absolute;
+    top: 25px;
+    left: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 0 6px;
+    background: var(--water);
+    color: var(--water-ink-soft);
+  }
+
+  .hint {
+    margin: 4px 0 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--water-ink-soft);
+  }
+</style>

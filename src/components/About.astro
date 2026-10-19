@@ -1,0 +1,100 @@
+---
+// First thing on the water: who I am, in a few short paragraphs, with the key facts at a glance.
+const facts = [
+  { label: 'Based in', value: 'Córdoba, Argentina' },
+  { label: 'Currently', value: 'Full-stack engineer at Atena' },
+  { label: 'Working in', value: 'English & Spanish' },
+  { label: 'Focus', value: 'Search, data and AI-powered features' },
+];
+---
+
+<section class="about" aria-labelledby="about-title">
+  <p class="label">// about</p>
+  <h2 id="about-title">I build web products end to end.</h2>
+
+  <div class="cols">
+    <div class="text">
+      <p>
+        I'm a full-stack engineer with 4 years of experience, working across the whole product: from backend
+        architecture and APIs to the interface people actually use.
+      </p>
+      <p>
+        Today I work at Atena on <strong>Venue Report</strong>, a global platform for finding places to celebrate and
+        gather. I'm part of an international team, working in English with the client and with design, SEO and content
+        teams, and I've taken part in rebuilding the whole platform, with a focus on search, data and AI-powered features.
+      </p>
+      <p>
+        Before that I built logistics platforms, co-founded a small web studio and tutored programming students. My
+        background in QA still shapes how I think about quality, and AI is part of my daily workflow.
+      </p>
+      <p>
+        I like products with real users, and teams where I can take ownership, from technical decisions to
+        conversations with stakeholders.
+      </p>
+    </div>
+
+    <dl class="facts">
+      {facts.map((f) => (
+        <div>
+          <dt>{f.label}</dt>
+          <dd>{f.value}</dd>
+        </div>
+      ))}
+    </dl>
+  </div>
+</section>
+
+<style>
+  .about {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .label {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft);
+  }
+  h2 {
+    margin: 0 0 32px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 48px;
+    align-items: start;
+  }
+  .text p {
+    margin: 0 0 16px;
+    max-width: 62ch;
+    font-size: 17px;
+    line-height: 1.6;
+  }
+  .text p:last-child { margin-bottom: 0; }
+  .facts {
+    margin: 0;
+    border-top: 1px solid var(--water-line);
+  }
+  .facts div {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--water-line);
+  }
+  dt {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--water-ink-soft);
+  }
+  dd {
+    margin: 2px 0 0;
+    font-size: 15px;
+  }
+  @media (max-width: 760px) {
+    .cols { grid-template-columns: 1fr; gap: 32px; }
+  }
+</style>
