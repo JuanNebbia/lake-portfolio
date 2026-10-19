@@ -158,15 +158,18 @@ export function initHero(hero: HTMLElement) {
   let drag: 'sun' | 'moon' | null = null;
   let lastSea = Infinity;
 
-  // water surface: the horizon at rest, then the top edge of the following content once it passes it
+  // Water surface: the horizon at rest, rising from the very first pixel of scroll and reaching the
+  // top as the following content does. It stays a little ahead of the content's top edge, so the
+  // text below always sits under water.
   function water(g: Geo) {
-    let sea = g.gy;
-    if (follower) sea = clamp(follower.getBoundingClientRect().top - hero.getBoundingClientRect().top, 0, g.gy);
-    return { sea, rise: 1 - sea / g.gy };   // rise: 0 at rest, 1 once the water fills the screen
+    if (!follower) return { sea: g.gy, rise: 0 };
+    const top = follower.getBoundingClientRect().top - hero.getBoundingClientRect().top;
+    const rise = clamp(1 - top / H, 0, 1);     // 0 with the content at rest (just below the hero), 1 at the top
+    return { sea: g.gy * (1 - rise), rise };
   }
   // Scrolling moves the clock forward: the hour on screen goes from the real (or dragged) hour
-  // to midnight, eased so it starts and settles gently, then stays put under the water.
-  const hourAt = (base: number, rise: number) => (base + hoursToMidnight(base) * smooth(0, 1, rise)) % 24;
+  // to midnight at a steady pace (linear in the scroll), then stays put under the water.
+  const hourAt = (base: number, rise: number) => (base + hoursToMidnight(base) * clamp(rise, 0, 1)) % 24;
   const shownHour = () => hourAt(state.hour, W ? water(geo()).rise : 0);
   // the inverse, for dragging the sun or moon mid-scroll: which real hour puts `target` on screen?
   function baseFor(target: number, rise: number) {
@@ -178,8 +181,11 @@ export function initHero(hero: HTMLElement) {
   }
 
   let shownText = '';
+  let nameDrift = 0;
+  let lastDrawAt = -1;
   function draw(t = performance.now()) {
     if (!W) return;
+    lastDrawAt = t;
     const g = geo(), { gy } = g;
     const { sea, rise } = water(g);
     const hour = hourAt(state.hour, rise);
@@ -283,13 +289,15 @@ export function initHero(hero: HTMLElement) {
     // water lines all the way down; the sun / moon reflection only near the surface, fading as the water rises
     const rx = p.day ? sx : mx, refl = p.day ? p.sunCol : p.moonCol, gap = (H - gy - 8) / 7;
     const reflA = Math.max(p.strength, 0.25) * (1 - smooth(0.15, 0.5, rise));
+    // the lines stay crisp on the banner's water, then settle into the background behind the content
+    const lineA = 0.12 * (1 - 0.5 * smooth(0.2, 0.9, rise));
     for (let k = 0, y = sea + 7; y < H; k++, y += gap) {
       if (k < 7 && reflA > 0.01) {
         const w = (56 - k * 4) * (0.6 + 0.4 * Math.sin(t / 700 + k)) * (g.narrow ? 0.7 : 1);
         f.strokeStyle = rgba(refl, (0.75 - k * 0.08) * reflA); f.lineWidth = 2;
         f.beginPath(); f.moveTo(rx - w / 2, y); f.lineTo(rx + w / 2, y); f.stroke();
       }
-      f.strokeStyle = rgba(ink, 0.12); f.lineWidth = 1;
+      f.strokeStyle = rgba(ink, lineA); f.lineWidth = 1;
       f.beginPath(); f.moveTo(0, y + 4); f.lineTo(W, y + 4); f.stroke();
     }
     // the boat is out by day, fading as the campfire takes over; it rides the rising water, then drifts off
@@ -308,6 +316,14 @@ export function initHero(hero: HTMLElement) {
     root.setProperty('--water-ink-soft', rgba(waterInk, 0.72));
     root.setProperty('--water-line', rgba(waterInk, 0.16));
     hero.style.setProperty('--copy-opacity', String(1 - smooth(0.05, 0.4, rise)));
+    // the name drifts away as the water comes in: it grows, rises a little, blurs and fades
+    const k = Math.round(smooth(0, 0.6, rise) * 1000) / 1000;
+    if (k !== nameDrift) {
+      nameDrift = k;
+      nameEl.style.transform = k ? `scale(${1 + 0.2 * k}) translate(${-50 + 10 * k}%, ${-20 * k}%)` : '';
+      nameEl.style.filter = k ? `blur(${5 * k}px)` : '';
+      nameEl.style.opacity = k ? String(1 - k) : '';
+    }
 
     // text colours: the small copy reads against the upper sky, the name against the sky behind the hills
     const copyInk = pickInk(mix(p.top, p.bot, 0.15));
@@ -420,9 +436,86 @@ export function initHero(hero: HTMLElement) {
       const h = nowHour();
       if (Math.abs(h - state.hour) > 1 / 120) { state.hour = h; updateUI(); }
     }
-    draw(t);
+    if (t !== lastDrawAt) draw(t);   // the glide may already have drawn this frame
     requestAnimationFrame(frame);
   };
+  // ---------- the rising water as one controlled move ----------
+  // Between the landscape and the water covering the screen there are no stops: the first
+  // gesture down (wheel, touch or keyboard) plays the whole rise at a steady pace, and the first
+  // gesture up from the water plays it back. The pace is set in hours of sky per second.
+  if (follower) setupWaterGlide();
+
+  function setupWaterGlide() {
+    const SECONDS_PER_HOUR = 0.04, MIN_MS = 1200, MAX_MS = 4500;
+    // the scroll position where the content's top edge (the water surface) reaches the top of the pinned hero
+    // (measured against the hero's parent: a sticky element's own offsetTop moves while it is stuck)
+    const target = () => follower!.getBoundingClientRect().top - (hero.parentElement ?? document.body).getBoundingClientRect().top;
+    let gliding = 0;
+
+    const glide = (to: number) => {
+      cancelAnimationFrame(gliding);
+      const from = scrollY;
+      if (Math.abs(to - from) < 1) return;
+      if (reduce) { scrollTo(0, to); return; }
+      // the share of the rise still to cover decides how much sky goes by, and so the duration
+      const share = Math.abs(to - from) / Math.max(1, target());
+      const dur = clamp(hoursToMidnight(state.hour) * SECONDS_PER_HOUR * 1000, MIN_MS, MAX_MS) * share;
+      // starts right away: a short ramp up, a steady middle (so the clock runs evenly), a short ramp down
+      const RAMP = 0.12, vmax = 1 / (1 - RAMP);
+      const ease = (k: number) =>
+        k < RAMP ? (vmax * k * k) / (2 * RAMP)
+        : k > 1 - RAMP ? 1 - (vmax * (1 - k) ** 2) / (2 * RAMP)
+        : vmax * (k - RAMP / 2);
+      let t0 = -1;
+      const step = (now: number) => {
+        if (t0 < 0) t0 = now - 16;                     // move on the very first frame
+        const k = clamp((now - t0) / dur, 0, 1);
+        scrollTo(0, from + (to - from) * ease(k));
+        draw(now);                                     // same frame as the scroll: the water never lags behind
+        gliding = k < 1 ? requestAnimationFrame(step) : 0;
+      };
+      gliding = requestAnimationFrame(step);
+    };
+
+    // which way to go for a gesture, or null if the page should just scroll normally
+    const decide = (down: boolean) => {
+      const y = scrollY, end = target();
+      if (down && y < end - 2) return end;
+      if (!down && y > 0 && y <= end + 2) return 0;
+      return null;
+    };
+
+    addEventListener('wheel', (e) => {
+      if (e.ctrlKey) return;                         // pinch-zoom on trackpads
+      if (gliding) { e.preventDefault(); return; }
+      const to = decide(e.deltaY > 0);
+      if (to === null || e.deltaY === 0) return;
+      e.preventDefault(); glide(to);
+    }, { passive: false });
+
+    let touchY = 0, touchFired = false;
+    addEventListener('touchstart', (e) => { touchY = e.touches[0]!.clientY; touchFired = false; }, { passive: true });
+    addEventListener('touchmove', (e) => {
+      if (gliding) { e.preventDefault(); return; }
+      const dy = touchY - e.touches[0]!.clientY;
+      const to = decide(dy > 0);
+      if (to === null) return;
+      e.preventDefault();
+      if (!touchFired && Math.abs(dy) > 12) { touchFired = true; glide(to); }
+    }, { passive: false });
+
+    addEventListener('keydown', (e) => {
+      if (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable]')) return;
+      const down = ['ArrowDown', 'PageDown', ' ', 'Spacebar'].includes(e.key) && !e.shiftKey;
+      const up = ['ArrowUp', 'PageUp', 'Home'].includes(e.key) || (e.key === ' ' && e.shiftKey);
+      if (!down && !up) return;
+      if (gliding) { e.preventDefault(); return; }
+      const to = decide(down);
+      if (to === null) return;
+      e.preventDefault(); glide(to);
+    });
+  }
+
   // redraw on scroll so the water follows even when the animation loop is off (reduced motion)
   let scrollQueued = false;
   addEventListener('scroll', () => {
