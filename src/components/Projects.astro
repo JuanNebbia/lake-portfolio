@@ -1,0 +1,167 @@
+---
+import { Image } from 'astro:assets';
+import { projects } from '../data/projects';
+
+const host = (url: string) => new URL(url).hostname.replace(/^www\./, '');
+---
+
+<section class="projects" aria-labelledby="projects-title">
+  <p class="label">// projects</p>
+  <h2 id="projects-title">Some of my work</h2>
+
+  <ul class="grid">
+    {projects.map((p) => (
+      <li class="card">
+        <div class="shot">
+          {p.image ? (
+            <Image src={p.image} alt={`${p.name} home page`} widths={[480, 720, 960]} sizes="(max-width: 700px) 100vw, 520px" loading="lazy" style={p.focus ? `object-position: ${p.focus}` : undefined} />
+          ) : (
+            <div class="placeholder" aria-hidden="true">
+              <span>// internal platform</span>
+            </div>
+          )}
+        </div>
+        <div class="body">
+          <p class="meta">{p.years} · {p.via}</p>
+          <h3>{p.name}</h3>
+          <p class="role">{p.role}</p>
+          <p class="text">{p.description}</p>
+          {p.stack.length > 0 && (
+            <ul class="stack" aria-label="Stack">
+              {p.stack.map((s) => <li>{s}</li>)}
+            </ul>
+          )}
+          {p.url && (
+            <a class="link" href={p.url} target="_blank" rel="noopener">
+              {host(p.url)} <span aria-hidden="true">↗</span>
+            </a>
+          )}
+        </div>
+      </li>
+    ))}
+  </ul>
+</section>
+
+<style>
+  .projects {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .label {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft);
+  }
+  h2 {
+    margin: 0 0 32px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+    gap: 20px;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--water-line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--water-ink) 4%, transparent);
+    backdrop-filter: blur(2px);
+  }
+  .shot {
+    aspect-ratio: 16 / 10;
+    border-bottom: 1px solid var(--water-line);
+    overflow: hidden;
+  }
+  .shot img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+  }
+  /* internal platforms: the water's own lines stand in for a screenshot */
+  .placeholder {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 17px,
+      var(--water-line) 17px 18px
+    );
+  }
+  .placeholder span {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft);
+  }
+  .body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 18px 20px 20px;
+    flex: 1;
+  }
+  .meta {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--water-ink-soft);
+  }
+  h3 {
+    margin: 4px 0 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 20px;
+  }
+  .role {
+    margin: 0 0 6px;
+    font-size: 14px;
+    color: var(--water-ink-soft);
+  }
+  .text {
+    margin: 0;
+    font-size: 15px;
+  }
+  .stack {
+    list-style: none;
+    margin: 10px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .stack li {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    padding: 3px 8px;
+    border: 1px solid var(--water-line);
+    border-radius: 999px;
+  }
+  .link {
+    margin-top: auto;
+    padding-top: 14px;
+    align-self: flex-start;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-color: var(--water-line);
+    text-underline-offset: 4px;
+  }
+  .link:hover { text-decoration-color: currentColor; }
+  .link:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 2px; }
+</style>

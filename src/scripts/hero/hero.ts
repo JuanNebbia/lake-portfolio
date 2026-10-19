@@ -9,6 +9,8 @@ import type { Frame } from './scene';
 const TITLE_FONT = { family: 'Bungee Shade', weight: 400 };
 /** 0 = straight facets between sampled nodes, 1 = soft rolling hills. */
 const ROUNDNESS = 0.15;
+/** Hours that go by while scrolling, from the landscape at rest until the water covers the screen. */
+const SCROLL_HOURS = 12;
 
 // ---------- seeded scenery ----------
 let seed = 11;
@@ -148,15 +150,29 @@ export function initHero(hero: HTMLElement) {
   let drag: 'sun' | 'moon' | null = null;
   let lastSea = Infinity;
 
+  // water surface: the horizon at rest, then the top edge of the following content once it passes it
+  function water(g: Geo) {
+    let sea = g.gy;
+    if (follower) sea = clamp(follower.getBoundingClientRect().top - hero.getBoundingClientRect().top, 0, g.gy);
+    return { sea, rise: 1 - sea / g.gy };   // rise: 0 at rest, 1 once the water fills the screen
+  }
+  // Scrolling moves the clock forward: the hour on screen is the real (or dragged) hour plus
+  // up to SCROLL_HOURS, eased so it starts and settles gently, then stays put under the water.
+  const scrollOffset = (rise: number) => SCROLL_HOURS * smooth(0, 1, rise);
+  const shownHour = () => (state.hour + scrollOffset(W ? water(geo()).rise : 0)) % 24;
+
+  let shownText = '';
   function draw(t = performance.now()) {
     if (!W) return;
-    const p = skyAt(state.hour), g = geo(), { gy } = g;
+    const g = geo(), { gy } = g;
+    const { sea, rise } = water(g);
+    const hour = (state.hour + scrollOffset(rise)) % 24;
+    const p = skyAt(hour);
     const ink = pickInk(mix(p.top, p.bot, 0.2));
-    // water surface: the horizon at rest, then the top edge of the following content once it passes it
-    let sea = gy;
-    if (follower) sea = clamp(follower.getBoundingClientRect().top - hero.getBoundingClientRect().top, 0, gy);
-    const rise = 1 - sea / gy;   // 0 at rest, 1 once the water fills the screen
     lastSea = sea;
+    // keep the clock in the corner in step with what the sky shows
+    const text = fmtTime(hour);
+    if (text !== shownText) { shownText = text; updateUI(hour); }
     const fr: Frame = { W, H, gy, sea, narrow: g.narrow, t, reduce, ink, p };
     const active = hover || drag;
 
@@ -244,8 +260,8 @@ export function initHero(hero: HTMLElement) {
         f.globalAlpha = 1;
       }
     });
-    const water = mix(p.top, p.bot, 0.55);
-    f.fillStyle = rgba(water); f.fillRect(0, sea, W, H - sea);
+    const waterCol = mix(p.top, p.bot, 0.55);
+    f.fillStyle = rgba(waterCol); f.fillRect(0, sea, W, H - sea);
     f.strokeStyle = rgba(ink, 0.7); f.lineWidth = 1.3;
     f.beginPath(); f.moveTo(0, sea); f.lineTo(W, sea); f.stroke();
     // water lines all the way down; the sun / moon reflection only near the surface, fading as the water rises
@@ -270,8 +286,8 @@ export function initHero(hero: HTMLElement) {
     if (rise < 0.6) events.drawJumpingFish(f, fr);
 
     // the page below shares the water: expose its colours to CSS
-    const waterInk = pickInk(water), root = document.documentElement.style;
-    root.setProperty('--water', rgba(water));
+    const waterInk = pickInk(waterCol), root = document.documentElement.style;
+    root.setProperty('--water', rgba(waterCol));
     root.setProperty('--water-ink', rgba(waterInk));
     root.setProperty('--water-ink-soft', rgba(waterInk, 0.72));
     root.setProperty('--water-line', rgba(waterInk, 0.16));
@@ -290,12 +306,12 @@ export function initHero(hero: HTMLElement) {
     const d = new Date();
     return d.getHours() + d.getMinutes() / 60 + d.getSeconds() / 3600;
   };
-  function updateUI() {
-    clockEl.textContent = fmtTime(state.hour);
-    const ph = phaseName(state.hour);
+  function updateUI(hour = shownHour()) {
+    clockEl.textContent = fmtTime(hour);
+    const ph = phaseName(hour);
     phaseEl.textContent = ph === 'night' || ph === 'dusk' ? `${ph} · ${moon.name}` : ph;
-    hourInput.value = state.hour.toFixed(2);
-    hourInput.setAttribute('aria-valuetext', fmtTime(state.hour));
+    hourInput.value = hour.toFixed(2);
+    hourInput.setAttribute('aria-valuetext', fmtTime(hour));
   }
   function setHour(h: number, mode: typeof state.mode) {
     state.hour = ((h % 24) + 24) % 24;
@@ -322,7 +338,7 @@ export function initHero(hero: HTMLElement) {
 
   // ---------- dragging the sun or the moon ----------
   function hit(x: number, y: number): 'sun' | 'moon' | null {
-    const p: Sky = skyAt(state.hour), g = geo();
+    const p: Sky = skyAt(shownHour()), g = geo();
     if (y > lastSea) return null;   // under water: nothing to grab
     if (p.sunAlt > -0.05) {
       const [sx, sy] = onArc(g, p.sp);
@@ -358,7 +374,9 @@ export function initHero(hero: HTMLElement) {
     if (a < 0) a += Math.PI * 2;
     const up = a <= Math.PI, s = up ? a / Math.PI : (a - Math.PI) / Math.PI;
     const sunHour = RISE + s * DAY, moonHour = SET + s * NIGHT;
-    setHour(drag === 'sun' ? (up ? sunHour : moonHour) : up ? moonHour : sunHour, 'manual');
+    // the drag sets the hour on screen; take the scroll offset back out to get the underlying hour
+    const target = drag === 'sun' ? (up ? sunHour : moonHour) : up ? moonHour : sunHour;
+    setHour(target - scrollOffset(water(g).rise), 'manual');
   });
   const end = () => {
     if (!drag) return;
@@ -371,7 +389,7 @@ export function initHero(hero: HTMLElement) {
   });
 
   // keyboard / screen reader: a visually hidden range input; time returns when focus leaves
-  hourInput.addEventListener('input', () => { cancelAnimationFrame(tween); setHour(+hourInput.value, 'manual'); });
+  hourInput.addEventListener('input', () => { cancelAnimationFrame(tween); setHour(+hourInput.value - scrollOffset(water(geo()).rise), 'manual'); });
   hourInput.addEventListener('blur', () => { if (state.mode === 'manual') returnToNow(); });
 
   // ---------- start ----------
