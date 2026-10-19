@@ -1,0 +1,125 @@
+---
+// Time-of-day hero: the sky, light and characters follow the visitor's local time.
+// Layers, back to front: sky canvas → name → hills & water canvas → small copy.
+// The hero stays pinned while the page scrolls; `water` names the element whose top edge
+// becomes the rising water surface, so the sea turns into the background of the content below.
+interface Props {
+  water?: string;
+}
+const { water } = Astro.props;
+---
+
+<section class="hero" data-hero data-hero-water={water} aria-label="Juan Nebbia, Full-Stack Engineer">
+  <canvas class="back" data-hero-back aria-hidden="true"></canvas>
+  <h1 class="name" data-hero-name>Juan Nebbia</h1>
+  <canvas class="front" data-hero-front aria-hidden="true"></canvas>
+  <div class="copy">
+    <p class="eyebrow">// <time data-hero-clock>12:00</time> · <span data-hero-phase>noon</span></p>
+  </div>
+  <input class="sr-only" type="range" data-hero-hour min="0" max="23.99" step="0.25" value="12" aria-label="Time of day" />
+</section>
+
+<script>
+  import { initHero } from '../scripts/hero/hero';
+  document.querySelectorAll<HTMLElement>('[data-hero]').forEach(initHero);
+</script>
+
+<style>
+  .hero {
+    --ink: #141a2b;
+    --ink-soft: rgba(20, 26, 43, 0.72);
+    --name: rgba(20, 26, 43, 0.88);
+    position: sticky;
+    top: 0;
+    z-index: 0;
+    width: 100%;
+    /* the whole first screen; svh keeps it steady while mobile browser bars show and hide */
+    height: 100vh;
+    height: 100svh;
+    min-height: 480px;
+    overflow: hidden;
+    isolation: isolate;
+    background: #5aa2dc;
+  }
+  canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .back { z-index: 0; }
+  .front { z-index: 2; touch-action: pan-y; }
+  .front:global(.grab) { cursor: grab; }
+  .front:global(.dragging) { cursor: grabbing; }
+
+  .name {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    margin: 0;
+    white-space: nowrap;
+    pointer-events: none;
+    font-family: var(--font-title);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--name);
+  }
+
+  .copy {
+    position: absolute;
+    z-index: 3;
+    left: clamp(20px, 5vw, 56px);
+    top: clamp(24px, 5vw, 52px);
+    right: 20px;
+    max-width: 380px;
+    color: var(--ink);
+    opacity: var(--copy-opacity, 1);
+    pointer-events: none;
+  }
+  .eyebrow {
+    margin: 0 0 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+  }
+  .eyebrow time { font-variant-numeric: tabular-nums; }
+  .role {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(16px, 1.8vw, 20px);
+    letter-spacing: 0.01em;
+  }
+  .tag {
+    margin: 8px 0 0;
+    font-size: clamp(14px, 1.35vw, 15.5px);
+    max-width: 34ch;
+    color: var(--ink-soft);
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .hero:has(.sr-only:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  /* colours ease between ink tones only after the first frame, so the page doesn't load with a fade */
+  .hero:global(.is-ready) .name,
+  .hero:global(.is-ready) .copy,
+  .hero:global(.is-ready) .eyebrow,
+  .hero:global(.is-ready) .tag {
+    transition: color 0.6s;
+  }
+
+</style>

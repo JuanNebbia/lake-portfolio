@@ -1,0 +1,120 @@
+---
+// Placeholder content that sits on the water once it has risen over the landscape.
+// Colours come from the hero (--water-ink…), so the text always reads against the current water.
+interface Props {
+  id?: string;
+}
+const { id } = Astro.props;
+
+const work = [
+  { name: 'Venue Report', role: 'Full-Stack Engineer · Atena', years: '2025 – now',
+    text: 'Search and discovery for 42,000+ venues in 120+ countries, data normalization for 170,000+ records and AI-powered content enrichment.' },
+  { name: 'BooBoo', role: 'Backend Developer · Outside The Box', years: '2023 – 2025',
+    text: 'Backend services and REST APIs with Node.js, Express and PostgreSQL for an international logistics company.' },
+  { name: 'Archivo Web', role: 'Co-founder · Full-Stack Developer', years: '2024 – 2025',
+    text: 'Websites for architecture studios and real estate agencies, with WordPress and Sanity.' },
+];
+---
+
+<div class="content" id={id}>
+  <section class="block">
+    <p class="label">// selected work</p>
+    <h2>Things I've built</h2>
+    <ul class="cards">
+      {work.map((w) => (
+        <li class="card">
+          <p class="meta">{w.years}</p>
+          <h3>{w.name}</h3>
+          <p class="role">{w.role}</p>
+          <p class="text">{w.text}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="block">
+    <p class="label">// about</p>
+    <h2>A few words</h2>
+    <p class="lead">
+      Full-stack engineer with 4 years of experience building web products end to end, from backend architecture
+      and APIs to the user-facing experience. Placeholder copy: this section is still to be written.
+    </p>
+  </section>
+
+  <section class="block">
+    <p class="label">// contact</p>
+    <h2>Let's talk</h2>
+    <p class="lead">juan.nebbia@gmail.com · linkedin.com/in/juan-nebbia · github.com/JuanNebbia</p>
+  </section>
+</div>
+
+<style>
+  .content {
+    position: relative;
+    z-index: 1;
+    color: var(--water-ink, #eef1fa);
+    padding: 96px 16px 120px;
+    display: grid;
+    gap: 96px;
+  }
+  .block {
+    max-width: 1080px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .label {
+    margin: 0 0 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--water-ink-soft, rgba(238, 241, 250, 0.72));
+  }
+  h2 {
+    margin: 0 0 28px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 3.4vw, 40px);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    border: 1px solid var(--water-line, rgba(238, 241, 250, 0.16));
+    border-radius: 10px;
+    padding: 20px;
+    background: color-mix(in srgb, var(--water-ink, #eef1fa) 4%, transparent);
+    backdrop-filter: blur(2px);
+  }
+  .meta {
+    margin: 0 0 10px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--water-ink-soft, rgba(238, 241, 250, 0.72));
+  }
+  h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 20px;
+  }
+  .role {
+    margin: 4px 0 12px;
+    font-size: 14px;
+    color: var(--water-ink-soft, rgba(238, 241, 250, 0.72));
+  }
+  .text {
+    margin: 0;
+    font-size: 15px;
+  }
+  .lead {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 17px;
+  }
+</style>
