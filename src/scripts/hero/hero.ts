@@ -201,6 +201,8 @@ export function initHero(hero: HTMLElement) {
   }
 
   let shownText = '';
+  const themeMeta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  let themeColor = '';
   let nameDrift = 0;
   let lastDrawAt = -1;
   function draw(t = performance.now()) {
@@ -332,6 +334,9 @@ export function initHero(hero: HTMLElement) {
     // the page below shares the water: expose its colours to CSS
     const waterInk = pickInk(waterCol), root = document.documentElement.style;
     root.setProperty('--water', rgba(waterCol));
+    // the browser's top bar takes the colour at the top of the screen: sky, or water once it has risen
+    const barCol = `rgb(${(sea > 1 ? p.top : waterCol).map(Math.round).join(',')})`;
+    if (barCol !== themeColor) { themeColor = barCol; themeMeta?.setAttribute('content', barCol); }
     root.setProperty('--water-ink', rgba(waterInk));
     root.setProperty('--water-ink-soft', rgba(waterInk, 0.72));
     root.setProperty('--water-line', rgba(waterInk, 0.16));

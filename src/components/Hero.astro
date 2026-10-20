@@ -47,9 +47,10 @@ const langs = Object.keys(languages) as Lang[];
     top: 0;
     z-index: 0;
     width: 100%;
-    /* the whole first screen; svh keeps it steady while mobile browser bars show and hide */
+    /* the whole first screen; lvh (the height with the browser bars hidden) lets the landscape
+       run behind the floating bars of mobile browsers instead of leaving a plain block there */
     height: 100vh;
-    height: 100svh;
+    height: 100lvh;
     min-height: 480px;
     overflow: hidden;
     isolation: isolate;

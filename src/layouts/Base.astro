@@ -14,7 +14,9 @@ const site = Astro.site ?? Astro.url;
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- tints the browser's bars (Safari, Chrome on Android); the hero keeps it in step with the sky -->
+    <meta name="theme-color" content="#0d1225" />
     <meta name="description" content={description} />
     {(Object.keys(languages) as Lang[]).map((l) => (
       <link rel="alternate" hreflang={l} href={new URL(homePath(l), site).href} />
@@ -64,8 +66,10 @@ const site = Astro.site ?? Astro.url;
   }
   *, *::before, *::after { box-sizing: border-box; }
   html, body { margin: 0; }
+  /* the page's own ground is the water: it shows behind mobile browser bars and on overscroll */
+  html { background: var(--water); }
   body {
-    background: var(--bg);
+    background: var(--water);
     color: var(--fg);
     font-family: var(--font-body);
     font-size: 15px;
