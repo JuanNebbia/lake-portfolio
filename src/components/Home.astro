@@ -28,6 +28,8 @@ import Contact from './Contact.astro';
     color: var(--water-ink);
     padding: 96px 16px 120px;
     display: grid;
+    /* minmax(0, …): without it the column grows to its widest content (the timeline) and pushes the text off a phone */
+    grid-template-columns: minmax(0, 1fr);
     gap: 156px;
     /* full-bleed strips (the timeline) reach 100vw; clip the few pixels a scrollbar would add */
     overflow-x: clip;

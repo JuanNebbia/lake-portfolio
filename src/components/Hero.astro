@@ -16,7 +16,7 @@ const langs = Object.keys(languages) as Lang[];
 
 <section class="hero" data-hero data-hero-water={water} data-lang={lang} aria-label={t['hero.label']}>
   <canvas class="back" data-hero-back aria-hidden="true"></canvas>
-  <h1 class="name" data-hero-name>Juan Nebbia</h1>
+  <h1 class="name" data-hero-name><span class="word">Juan</span> <span class="word">Nebbia</span></h1>
   <canvas class="front" data-hero-front aria-hidden="true"></canvas>
   <div class="copy">
     <p class="eyebrow">// <time data-hero-clock>12:00</time> · <span data-hero-phase></span></p>
@@ -83,6 +83,9 @@ const langs = Object.keys(languages) as Lang[];
     /* its own GPU layer: it scales, blurs and fades on every frame of the rising water */
     will-change: transform, filter, opacity;
   }
+  /* on a phone the script stacks the words, so the name can be much bigger */
+  .name:global(.stacked) { text-align: center; }
+  .name:global(.stacked) .word { display: block; }
 
   .copy {
     position: absolute;

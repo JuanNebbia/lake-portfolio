@@ -68,23 +68,30 @@ export function initHero(hero: HTMLElement) {
 
   let W = 0, H = 0;
   // where the name sits, so the back ridge can rise in front of it
-  const name = { base: 0, cap: 0, gap: 0.44 };
+  const name = { base: 0, cap: 0, gap: 0.44, stacked: false };
 
   // ---------- geometry ----------
   function geo(): Geo {
-    const narrow = W < 640, gy = H * (narrow ? 0.84 : 0.8);
-    // the arc leans right so the sun and moon stay clear of the copy in the top-left corner
+    const narrow = W < 640, gy = H * (narrow ? 0.7 : 0.8);
+    // the arc leans right so the sun and moon stay clear of the copy in the top-left corner;
+    // on a phone it runs wider than the screen, rising and setting beyond its edges
     return {
       narrow, gy,
-      ax: W * (narrow ? 0.5 : 0.62), rx: W * (narrow ? 0.44 : 0.34), ry: gy * (narrow ? 0.55 : 0.8),
+      ax: W * (narrow ? 0.5 : 0.62), rx: W * (narrow ? 0.72 : 0.34), ry: gy * (narrow ? 0.72 : 0.8),
       sunR: narrow ? 30 : 46, moonR: narrow ? 15 : 20,
     };
   }
   const onArc = (g: Geo, s: number): [number, number] =>
     [g.ax - g.rx * Math.cos(s * Math.PI), g.gy - g.ry * Math.sin(s * Math.PI)];
 
+  // The ranges are laid out on a landscape at least this wide; a narrower screen shows its middle
+  // instead of squeezing every slope into the width of a phone.
+  const LANDSCAPE_MIN = 800;
+  const view = () => { const VW = Math.max(W, LANDSCAPE_MIN); return { VW, off: (VW - W) / 2 }; };
+
   const hillSoft = (L: Hill, g: Geo, x: number) => {
-    const u = x / W;
+    const { VW, off } = view();
+    const u = (x + off) / VW;
     let v = 0.5 + 0.32 * Math.sin(u * Math.PI * 2 * L.f[0] + L.ph[0]) + 0.18 * Math.sin(u * Math.PI * 2 * L.f[1] + L.ph[1]);
     if (L.edge) {
       const e = smooth(0.32, 0, u) + smooth(0.68, 1, u);
@@ -108,11 +115,13 @@ export function initHero(hero: HTMLElement) {
   function hillY(L: Hill, g: Geo, x: number) {
     let y = hillSoft(L, g, x);
     if (ROUNDNESS < 1) {
-      const seg = W / L.nodes, i = Math.floor(x / seg), t = x / seg - i;
-      const yp = hillSoft(L, g, i * seg) * (1 - t) + hillSoft(L, g, (i + 1) * seg) * t;
+      // facets sit on the landscape's grid, not the screen's, so they keep their size on a phone
+      const { VW, off } = view();
+      const seg = VW / L.nodes, vx = x + off, i = Math.floor(vx / seg), t = vx / seg - i;
+      const yp = hillSoft(L, g, i * seg - off) * (1 - t) + hillSoft(L, g, (i + 1) * seg - off) * t;
       y = yp + (y - yp) * ROUNDNESS;
     }
-    if (L.hump && name.cap) {
+    if (L.hump && name.cap && !name.stacked) {   // the hump belongs between the words of a one-line name
       const peakY = name.base - name.cap * 0.36, h = humpAt(x / W);
       if (h > 0 && peakY < y) y -= (y - peakY) * h;
     }
@@ -133,8 +142,12 @@ export function initHero(hero: HTMLElement) {
   function placeName() {
     if (!W) return;
     const g = geo(), L = HILLS[0]!;
+    // on a phone the name stacks in two lines ("Juan" over "Nebbia") so it can be much bigger
+    name.stacked = g.narrow;
+    nameEl.classList.toggle('stacked', name.stacked);
+    const lines = name.stacked ? 2 : 1;
     nameEl.style.fontSize = '100px';
-    const w100 = nameEl.getBoundingClientRect().width;
+    const w100 = nameEl.getBoundingClientRect().width;   // the widest line
     const F = Math.min((W * (g.narrow ? 0.9 : 0.84)) / w100 * 100, g.gy * L.amp * 1.25);
     nameEl.style.fontSize = `${F}px`;
     bx.font = `${TITLE_FONT.weight} ${F}px "${TITLE_FONT.family}", 'Arial Black', sans-serif`;
@@ -148,14 +161,16 @@ export function initHero(hero: HTMLElement) {
     for (let x = W / 2 - half; x <= W / 2 + half; x += 4) ridge = Math.min(ridge, hillSoft(L, g, x));
     name.base = ridge + cap * 0.2;
     name.cap = cap;
-    // centre the hump on the space between "Juan" and "Nebbia"
-    try {
-      const r = document.createRange(), tn = nameEl.firstChild!;
-      r.setStart(tn, 4); r.setEnd(tn, 5);
+    // centre the hump on the space between "Juan" and "Nebbia" (the text node between the two words)
+    const space = [...nameEl.childNodes].find((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim() === '');
+    if (space && !name.stacked) {
+      const r = document.createRange();
+      r.selectNodeContents(space);
       const sp = r.getBoundingClientRect(), hr = hero.getBoundingClientRect();
       name.gap = (sp.left + sp.width / 2 - hr.left) / W;
-    } catch { name.gap = 0.44; }
-    nameEl.style.top = `${name.base - baseFromTop}px`;
+    } else name.gap = 0.44;
+    // the baseline that peeks over the ridge is the last line's
+    nameEl.style.top = `${name.base - (lines - 1) * F - baseFromTop}px`;
   }
 
   // ---------- drawing ----------
