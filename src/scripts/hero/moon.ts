@@ -3,10 +3,10 @@ import type { Sky } from './sky';
 
 // Moon age in days since a reference new moon (2000-01-06 18:14 UTC); synodic month 29.53 days
 const SYNODIC = 29.530588853;
-const NAMES = [
-  'new moon', 'waxing crescent', 'first quarter', 'waxing gibbous',
-  'full moon', 'waning gibbous', 'last quarter', 'waning crescent',
-];
+const NAMES = {
+  en: ['new moon', 'waxing crescent', 'first quarter', 'waxing gibbous', 'full moon', 'waning gibbous', 'last quarter', 'waning crescent'],
+  es: ['luna nueva', 'luna creciente', 'cuarto creciente', 'gibosa creciente', 'luna llena', 'gibosa menguante', 'cuarto menguante', 'luna menguante'],
+};
 
 export interface MoonPhase {
   /** Fraction of the cycle, 0 = new, 0.5 = full. */
@@ -16,11 +16,11 @@ export interface MoonPhase {
   name: string;
 }
 
-export function moonPhase(date = new Date()): MoonPhase {
+export function moonPhase(date = new Date(), lang: keyof typeof NAMES = 'en'): MoonPhase {
   const days = (date.getTime() - Date.UTC(2000, 0, 6, 18, 14)) / 864e5;
   const age = ((days % SYNODIC) + SYNODIC) % SYNODIC;
   const f = age / SYNODIC;
-  return { f, lit: (1 - Math.cos(2 * Math.PI * f)) / 2, name: NAMES[Math.round(f * 8) % 8]! };
+  return { f, lit: (1 - Math.cos(2 * Math.PI * f)) / 2, name: NAMES[lang][Math.round(f * 8) % 8]! };
 }
 
 /**

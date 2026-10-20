@@ -1,34 +1,5 @@
 ---
-import Base from '../layouts/Base.astro';
-import Hero from '../components/Hero.astro';
-import About from '../components/About.astro';
-import Projects from '../components/Projects.astro';
-import Experience from '../components/Experience.astro';
-import Contact from '../components/Contact.astro';
+import Home from '../components/Home.astro';
 ---
 
-<Base>
-  <main>
-    <Hero water="#content" />
-    <!-- Everything below rides on the water: its top edge is the water surface rising over the hero -->
-    <div class="content" id="content">
-      <About />
-      <Projects />
-      <Experience />
-      <Contact />
-    </div>
-  </main>
-</Base>
-
-<style>
-  .content {
-    position: relative;
-    z-index: 1;
-    color: var(--water-ink);
-    padding: 96px 16px 120px;
-    display: grid;
-    gap: 156px;
-    /* full-bleed strips (the timeline) reach 100vw; clip the few pixels a scrollbar would add */
-    overflow-x: clip;
-  }
-</style>
+<Home />

@@ -58,7 +58,12 @@ export function initHero(hero: HTMLElement) {
   // the content that follows: as it scrolls up over the hero, the water rises with its top edge
   const follower = hero.dataset.heroWater ? document.querySelector<HTMLElement>(hero.dataset.heroWater) : null;
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const moon = moonPhase();
+  const lang = hero.dataset.lang === 'es' ? 'es' : 'en';
+  const moon = moonPhase(new Date(), lang);
+  // the moment of the day in the corner, in the page's language
+  const PHASES: Record<string, string> = lang === 'es'
+    ? { dawn: 'alba', sunrise: 'amanecer', morning: 'mañana', noon: 'mediodía', afternoon: 'tarde', sunset: 'atardecer', dusk: 'crepúsculo', night: 'noche' }
+    : {};
   const events = new Events();
 
   let W = 0, H = 0;
@@ -341,7 +346,8 @@ export function initHero(hero: HTMLElement) {
   function updateUI(hour = shownHour()) {
     clockEl.textContent = fmtTime(hour);
     const ph = phaseName(hour);
-    phaseEl.textContent = ph === 'night' || ph === 'dusk' ? `${ph} · ${moon.name}` : ph;
+    const label = PHASES[ph] ?? ph;
+    phaseEl.textContent = ph === 'night' || ph === 'dusk' ? `${label} · ${moon.name}` : label;
     hourInput.value = hour.toFixed(2);
     hourInput.setAttribute('aria-valuetext', fmtTime(hour));
   }

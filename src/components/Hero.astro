@@ -3,20 +3,34 @@
 // Layers, back to front: sky canvas → name → hills & water canvas → small copy.
 // The hero stays pinned while the page scrolls; `water` names the element whose top edge
 // becomes the rising water surface, so the sea turns into the background of the content below.
+import { homePath, langFromUrl, languages, useT, type Lang } from '../i18n/ui';
+
 interface Props {
   water?: string;
 }
 const { water } = Astro.props;
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
+const langs = Object.keys(languages) as Lang[];
 ---
 
-<section class="hero" data-hero data-hero-water={water} aria-label="Juan Nebbia, Full-Stack Engineer">
+<section class="hero" data-hero data-hero-water={water} data-lang={lang} aria-label={t['hero.label']}>
   <canvas class="back" data-hero-back aria-hidden="true"></canvas>
   <h1 class="name" data-hero-name>Juan Nebbia</h1>
   <canvas class="front" data-hero-front aria-hidden="true"></canvas>
   <div class="copy">
-    <p class="eyebrow">// <time data-hero-clock>12:00</time> · <span data-hero-phase>noon</span></p>
+    <p class="eyebrow">// <time data-hero-clock>12:00</time> · <span data-hero-phase></span></p>
   </div>
-  <input class="sr-only" type="range" data-hero-hour min="0" max="23.99" step="0.25" value="12" aria-label="Time of day" />
+  <!-- language switch: top right, part of the hero (it scrolls away with it) -->
+  <nav class="langs" aria-label={t['lang.label']}>
+    {langs.map((l, i) => (
+      <>
+        {i > 0 && <span class="sep" aria-hidden="true">/</span>}
+        <a href={homePath(l)} hreflang={l} lang={l} aria-current={l === lang ? 'true' : undefined} title={languages[l]}>{l}</a>
+      </>
+    ))}
+  </nav>
+  <input class="sr-only" type="range" data-hero-hour min="0" max="23.99" step="0.25" value="12" aria-label={t['hero.time']} />
 </section>
 
 <script>
@@ -89,6 +103,34 @@ const { water } = Astro.props;
     color: var(--ink-soft);
   }
   .eyebrow time { font-variant-numeric: tabular-nums; }
+
+  /* language switch, mirroring the clock on the other side; it fades with it as the water comes in */
+  .langs {
+    position: absolute;
+    z-index: 3;
+    top: clamp(24px, 5vw, 52px);
+    right: clamp(20px, 5vw, 56px);
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    opacity: var(--copy-opacity, 1);
+  }
+  .langs a {
+    color: inherit;
+    text-decoration: none;
+    padding: 2px;
+    border-radius: 3px;
+  }
+  .langs a:hover { color: var(--ink); }
+  .langs a[aria-current] {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .langs a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
   .role {
     margin: 0;
     font-family: var(--font-display);

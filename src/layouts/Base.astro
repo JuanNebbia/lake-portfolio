@@ -1,19 +1,25 @@
 ---
+import { homePath, langFromUrl, languages, useT, type Lang } from '../i18n/ui';
+
 interface Props {
   title?: string;
   description?: string;
 }
-const {
-  title = 'Juan Nebbia',
-  description = 'Full-stack engineer building web products end to end, from backend architecture to the interface.',
-} = Astro.props;
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
+const { title = t['meta.title'], description = t['meta.description'] } = Astro.props;
+const site = Astro.site ?? Astro.url;
 ---
 
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    {(Object.keys(languages) as Lang[]).map((l) => (
+      <link rel="alternate" hreflang={l} href={new URL(homePath(l), site).href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={new URL(homePath('en'), site).href} />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

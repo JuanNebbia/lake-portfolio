@@ -1,23 +1,26 @@
 ---
 // Contact: one row per channel, each with a button to copy it and a link to open it.
+import { langFromUrl, useT } from '../i18n/ui';
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
 const channels = [
-  { label: 'Email', value: 'juan.nebbia@gmail.com', href: 'mailto:juan.nebbia@gmail.com', open: 'Write an email' },
-  { label: 'LinkedIn', value: 'linkedin.com/in/juan-nebbia', href: 'https://www.linkedin.com/in/juan-nebbia', open: 'Open LinkedIn profile' },
-  { label: 'GitHub', value: 'github.com/JuanNebbia', href: 'https://github.com/JuanNebbia', open: 'Open GitHub profile' },
+  { label: 'email', value: 'juan.nebbia@gmail.com', href: 'mailto:juan.nebbia@gmail.com', open: t['contact.email'] },
+  { label: 'LinkedIn', value: 'linkedin.com/in/juan-nebbia', href: 'https://www.linkedin.com/in/juan-nebbia', open: t['contact.linkedin'] },
+  { label: 'GitHub', value: 'github.com/JuanNebbia', href: 'https://github.com/JuanNebbia', open: t['contact.github'] },
 ];
 ---
 
-<section class="contact" aria-labelledby="contact-title">
-  <p class="label">// contact</p>
-  <h2 id="contact-title">Let's talk</h2>
-  <p class="lead" style="text-wrap: pretty;">Always open to hear about new challenges. The fastest way to reach me is by email.</p>
+<section class="contact" aria-labelledby="contact-title" data-copied-label={t['contact.copied']('{}')}>
+  <p class="label">{t['contact.label']}</p>
+  <h2 id="contact-title">{t['contact.title']}</h2>
+  <p class="lead" style="text-wrap: pretty;">{t['contact.lead']}</p>
 
   <ul class="list">
     {channels.map((c) => (
       <li class="row">
         <span class="value">{c.value}</span>
         <span class="actions">
-          <button type="button" class="icon" data-copy={c.value} aria-label={`Copy ${c.label.toLowerCase()}`}>
+          <button type="button" class="icon" data-copy={c.value} aria-label={t['contact.copy'](c.label)}>
             <svg class="i-copy" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /></svg>
             <svg class="i-done" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
           </button>
@@ -46,7 +49,8 @@ const channels = [
         return;
       }
       btn.classList.add('copied');
-      if (status) status.textContent = `Copied ${text}`;
+      const template = btn.closest<HTMLElement>('[data-copied-label]')?.dataset.copiedLabel ?? 'Copied {}';
+      if (status) status.textContent = template.replace('{}', text);
       clearTimeout(timer);
       timer = window.setTimeout(() => btn.classList.remove('copied'), 1600);
     });

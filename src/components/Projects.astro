@@ -1,31 +1,34 @@
 ---
 import { Image } from 'astro:assets';
 import { projects } from '../data/projects';
+import { langFromUrl, tr, useT } from '../i18n/ui';
 
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
 const host = (url: string) => new URL(url).hostname.replace(/^www\./, '');
 ---
 
 <section class="projects" aria-labelledby="projects-title">
-  <p class="label">// projects</p>
-  <h2 id="projects-title">Some of my work</h2>
+  <p class="label">{t['projects.label']}</p>
+  <h2 id="projects-title">{t['projects.title']}</h2>
 
   <ul class="grid">
     {projects.map((p) => (
       <li class="card">
         <div class="shot">
           {p.image ? (
-            <Image src={p.image} alt={`${p.name} home page`} widths={[480, 720, 960]} sizes="(max-width: 700px) 100vw, 520px" loading="lazy" style={p.focus ? `object-position: ${p.focus}` : undefined} />
+            <Image src={p.image} alt={`${p.name}, ${t['projects.homePage']}`} widths={[480, 720, 960]} sizes="(max-width: 700px) 100vw, 520px" loading="lazy" style={p.focus ? `object-position: ${p.focus}` : undefined} />
           ) : (
             <div class="placeholder" aria-hidden="true">
-              <span>// internal platform</span>
+              <span>{t['projects.internal']}</span>
             </div>
           )}
         </div>
         <div class="body">
-          <p class="meta">{p.years} · {p.via}</p>
+          <p class="meta">{tr(p.years, lang)} · {tr(p.via, lang)}</p>
           <h3>{p.name}</h3>
-          <p class="role">{p.role}</p>
-          <p class="text">{p.description}</p>
+          <p class="role">{tr(p.role, lang)}</p>
+          <p class="text">{tr(p.description, lang)}</p>
           {p.stack.length > 0 && (
             <ul class="stack" aria-label="Stack">
               {p.stack.map((s) => <li>{s}</li>)}

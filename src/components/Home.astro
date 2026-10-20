@@ -1,0 +1,35 @@
+---
+// The whole page, shared by every language: each component reads the language from the URL.
+import Base from '../layouts/Base.astro';
+import Hero from './Hero.astro';
+import About from './About.astro';
+import Projects from './Projects.astro';
+import Experience from './Experience.astro';
+import Contact from './Contact.astro';
+---
+
+<Base>
+  <main>
+    <Hero water="#content" />
+    <!-- Everything below rides on the water: its top edge is the water surface rising over the hero -->
+    <div class="content" id="content">
+      <About />
+      <Projects />
+      <Experience />
+      <Contact />
+    </div>
+  </main>
+</Base>
+
+<style>
+  .content {
+    position: relative;
+    z-index: 1;
+    color: var(--water-ink);
+    padding: 96px 16px 120px;
+    display: grid;
+    gap: 156px;
+    /* full-bleed strips (the timeline) reach 100vw; clip the few pixels a scrollbar would add */
+    overflow-x: clip;
+  }
+</style>

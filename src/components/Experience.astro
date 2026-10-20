@@ -2,7 +2,10 @@
 // Horizontal timeline: oldest on the left, opening scrolled to the present.
 // Drag it (or scroll / use the arrow keys) to travel back in time; the year in the heading follows.
 import { stages } from '../data/experience';
+import { langFromUrl, tr, useT } from '../i18n/ui';
 
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
 const firstYear = stages[0]!.start.slice(0, 4);
 // the line opens on the present; the script swaps in the visitor's current year
 const thisYear = String(new Date().getFullYear());
@@ -11,35 +14,35 @@ const thisYear = String(new Date().getFullYear());
 <section class="experience" aria-labelledby="experience-title">
   <div class="head">
     <div>
-      <p class="label">// experience</p>
-      <h2 id="experience-title">The road so far</h2>
+      <p class="label">{t['experience.label']}</p>
+      <h2 id="experience-title">{t['experience.title']}</h2>
     </div>
     <p class="now" aria-hidden="true"><span data-tl-year>{thisYear}</span></p>
   </div>
 
   <!-- the edge fades live on this wrapper, not as a mask on the scroller: a mask would stop the cards' backdrop blur -->
   <div class="strip">
-    <div class="scroller" data-timeline tabindex="0" aria-label={`Timeline from ${firstYear} to today. Drag or use the arrow keys to move through it.`}>
+    <div class="scroller" data-timeline tabindex="0" aria-label={t['experience.aria'](firstYear)}>
       <ol class="track">
         {stages.map((stage) => (
           <li class:list={['stage', stage.kind]} data-year={stage.start.slice(0, 4)}>
             <span class="dot" aria-hidden="true"></span>
-            <p class="dates">{stage.dates}</p>
+            <p class="dates">{tr(stage.dates, lang)}</p>
             <article class="card">
-              <h3>{stage.role}</h3>
-              <p class="place">{stage.place}</p>
-              {stage.summary && <p class="summary">{stage.summary}</p>}
+              <h3>{tr(stage.role, lang)}</h3>
+              <p class="place">{tr(stage.place, lang)}</p>
+              {stage.summary && <p class="summary">{tr(stage.summary, lang)}</p>}
               {stage.tags && (
                 <ul class="tags">{stage.tags.map((t) => <li>{t}</li>)}</ul>
               )}
             </article>
           </li>
         ))}
-        <li class="end" aria-hidden="true"><span>now</span></li>
+        <li class="end" aria-hidden="true"><span>{t['experience.now']}</span></li>
       </ol>
     </div>
   </div>
-  <p class="hint" aria-hidden="true">← drag to go back in time</p>
+  <p class="hint" aria-hidden="true">{t['experience.hint']}</p>
 </section>
 
 <script>

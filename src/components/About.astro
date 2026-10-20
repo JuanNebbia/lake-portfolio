@@ -1,7 +1,39 @@
-<section class="about" aria-labelledby="about-title">
-  <p class="label">// about</p>
-  <h2 id="about-title">I build web products end to end.</h2>
+---
+import { langFromUrl, useT } from '../i18n/ui';
+const lang = langFromUrl(Astro.url);
+const t = useT(lang);
+---
 
+<section class="about" aria-labelledby="about-title">
+  <p class="label">{t['about.label']}</p>
+  {lang === 'es' ? (
+    <Fragment>
+    <h2 id="about-title">Construyo productos web de punta a punta.</h2>
+    <div class="text">
+      <p>
+        Soy desarrollador full-stack con 4 años de experiencia, y trabajo en todo el producto: desde la arquitectura
+        backend y las APIs hasta la interfaz que usan las personas.
+      </p>
+      <p>
+        Hoy trabajo en Atena en <strong>Venue Report</strong>, una plataforma global para encontrar lugares donde
+        celebrar y reunirse. Formo parte de un equipo internacional, trabajo en inglés con el cliente y con los equipos de
+        diseño, SEO y contenido, y participé en la reconstrucción de toda la plataforma, con foco en la búsqueda, los
+        datos y las funcionalidades con IA.
+      </p>
+      <p>
+        Antes construí plataformas de logística, cofundé un pequeño estudio web y fui tutor de estudiantes de
+        programación. Mi experiencia en QA sigue influyendo en cómo pienso la calidad, y la IA es parte de mi trabajo
+        diario.
+      </p>
+      <p>
+        Me gustan los productos con usuarios reales y los equipos donde puedo asumir responsabilidad, desde las
+        decisiones técnicas hasta las conversaciones con stakeholders.
+      </p>
+    </div>
+    </Fragment>
+  ) : (
+    <Fragment>
+    <h2 id="about-title">I build web products end to end.</h2>
     <div class="text">
       <p>
         I'm a full-stack engineer with 4 years of experience, working across the whole product: from backend
@@ -21,6 +53,8 @@
         conversations with stakeholders.
       </p>
     </div>
+    </Fragment>
+  )}
 </section>
 
 <style>
