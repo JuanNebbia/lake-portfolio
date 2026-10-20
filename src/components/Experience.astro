@@ -4,7 +4,8 @@
 import { stages } from '../data/experience';
 
 const firstYear = stages[0]!.start.slice(0, 4);
-const lastStageYear = stages[stages.length - 1]!.start.slice(0, 4);
+// the line opens on the present; the script swaps in the visitor's current year
+const thisYear = String(new Date().getFullYear());
 ---
 
 <section class="experience" aria-labelledby="experience-title">
@@ -13,7 +14,7 @@ const lastStageYear = stages[stages.length - 1]!.start.slice(0, 4);
       <p class="label">// experience</p>
       <h2 id="experience-title">The road so far</h2>
     </div>
-    <p class="now" aria-hidden="true"><span data-tl-year>{lastStageYear}</span></p>
+    <p class="now" aria-hidden="true"><span data-tl-year>{thisYear}</span></p>
   </div>
 
   <!-- the edge fades live on this wrapper, not as a mask on the scroller: a mask would stop the cards' backdrop blur -->
@@ -49,12 +50,15 @@ const lastStageYear = stages[stages.length - 1]!.start.slice(0, 4);
     // open on the present
     el.scrollLeft = el.scrollWidth;
 
-    // the year of whatever sits in the middle of the view
+    // the year of whatever sits in the middle of the view; at the right end, the present
+    const now = String(new Date().getFullYear());
     const updateYear = () => {
       if (!yearEl) return;
+      const atEnd = el.scrollLeft >= el.scrollWidth - el.clientWidth - 4;
       const mid = el.getBoundingClientRect().left + el.clientWidth / 2;
       let year = marks[0]?.dataset.year ?? '';
       for (const m of marks) if (m.getBoundingClientRect().left <= mid) year = m.dataset.year!;
+      if (atEnd) year = now;
       if (yearEl.textContent !== year) yearEl.textContent = year;
     };
     el.addEventListener('scroll', updateYear, { passive: true });
@@ -111,7 +115,7 @@ const lastStageYear = stages[stages.length - 1]!.start.slice(0, 4);
   .now {
     margin: 0;
     font-family: var(--font-mono);
-    font-size: clamp(28px, 4vw, 44px);
+    font-size: clamp(22px, 3.2vw, 35px);
     font-variant-numeric: tabular-nums;
     color: var(--water-ink-soft);
   }

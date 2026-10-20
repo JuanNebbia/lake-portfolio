@@ -8,7 +8,7 @@ export const NIGHT = 24 - DAY;
 // Sky colours through the day: [hour, top of the sky, horizon]
 const KEYFRAMES: [number, RGB, RGB][] = (
   [
-    [0, '#0a0f24', '#1a2142'],
+    [0, '#070a18', '#121830'],   // midnight, the darkest point: its water is #0d1225, the page background
     [4.9, '#0f1534', '#272a52'],
     [5.9, '#2a3468', '#8d6f93'],
     [6.8, '#5f7fbc', '#f2b088'],
@@ -19,7 +19,7 @@ const KEYFRAMES: [number, RGB, RGB][] = (
     [19.7, '#2f2c5b', '#bb5f6c'],
     [20.6, '#151a3b', '#3b2f5e'],
     [21.6, '#0a0f24', '#1a2142'],
-    [24, '#0a0f24', '#1a2142'],
+    [24, '#070a18', '#121830'],
   ] as [number, string, string][]
 ).map(([h, a, b]) => [h, hex(a), hex(b)]);
 

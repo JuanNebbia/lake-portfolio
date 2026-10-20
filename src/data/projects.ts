@@ -62,7 +62,7 @@ export const projects: Project[] = [
     via: 'Archivo Web',
     description:
       'The site of an architecture studio that is also a cultural space: projects, an events agenda, a café and a shop, with all the content managed from WordPress.',
-    stack: ['Astro', 'WordPress'],
+    stack: ['Astro', 'WordPress', 'React', 'React Hook Form', 'Tailwind CSS'],
     url: 'https://www.wip.ar',
     image: wip,
   },
@@ -73,7 +73,7 @@ export const projects: Project[] = [
     via: 'Archivo Web',
     description:
       'A real estate agency site with property search and listings synced from Tokko, the system the agency uses to manage its properties.',
-    stack: ['Astro', 'Tokko API'],
+    stack: ['Astro', 'Tokko API', 'React', 'Tailwind CSS'],
     url: 'https://hdhbienesraices.com.ar',
     image: hdh,
   },
